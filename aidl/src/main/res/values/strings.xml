@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">AIDLTemplate</string>
+
+    <string name="btn_bind">绑定服务</string>
+    <string name="btn_unbind">解绑服务</string>
+    <string name="btn_start_download">Start Download</string>
 </resources>
