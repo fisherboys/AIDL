@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
@@ -16,6 +17,8 @@ import android.widget.Toast;
 public class ClientActivity extends AppCompatActivity implements View.OnClickListener{
 
     private static final String TAG = "ClientActivity";
+
+    private Handler mHandler = new Handler();
 
     private IDownloadManagerService mDownloadManagerService = null;
 
@@ -86,7 +89,8 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
             try {
                 boolean isStart = mDownloadManagerService.startDownload();//客户端调用服务端方法
                 Toast.makeText(this, "Does Start Download?  " + isStart, Toast.LENGTH_SHORT).show();
-            } catch (RemoteException e) {
+                mDownloadManagerService.addDownloadListener(mCallback);
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         } else {
@@ -107,6 +111,19 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
             Log.d(TAG, "onServiceDisconnected");
             Toast.makeText(ClientActivity.this, "Download Service disconnected", Toast.LENGTH_SHORT).show();
             mDownloadManagerService = null;
+        }
+    };
+
+    IDownloadCallback mCallback = new IDownloadCallback.Stub() {
+        @Override
+        public void onDownloaded() throws RemoteException {
+            Log.d(TAG, "onDownloaded: 下载完成显示回调");
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(ClientActivity.this, "下载完成显示回调", Toast.LENGTH_SHORT).show();
+                }
+            });
         }
     };
 }
