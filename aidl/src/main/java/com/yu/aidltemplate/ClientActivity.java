@@ -102,6 +102,11 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             Log.d(TAG, "service connected");
+            try {
+                service.linkToDeath(mDeathRecipient, 0);//绑定死亡代理
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
             Toast.makeText(ClientActivity.this, "Download Service connected", Toast.LENGTH_SHORT).show();
             mDownloadManagerService = IDownloadManagerService.Stub.asInterface(service);
         }
@@ -124,6 +129,19 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
                     Toast.makeText(ClientActivity.this, "下载完成显示回调", Toast.LENGTH_SHORT).show();
                 }
             });
+        }
+    };
+
+    //绑定死亡代理，如果服务端意外退出，可以重新绑定服务
+    private IBinder.DeathRecipient mDeathRecipient = new IBinder.DeathRecipient() {
+        @Override
+        public void binderDied() {
+            if (mDownloadManagerService == null) {
+                return;
+            }
+            mDownloadManagerService.asBinder().unlinkToDeath(mDeathRecipient, 0);
+            mDownloadManagerService = null;
+            attemptToBindService();
         }
     };
 }
