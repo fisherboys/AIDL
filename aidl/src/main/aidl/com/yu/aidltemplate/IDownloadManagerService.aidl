@@ -23,4 +23,23 @@ interface IDownloadManagerService {
      * desc: unregister downloaded callback
      */
     void delDownloadListener(IDownloadCallback cb);
+    /*
+     * args:
+     * return: non
+     * desc:add app to download list
+     */
+    void addAppToList(IBinder token, String name);
+    /*
+     * args:
+     * return: non
+     * desc: remove app from download list
+     */
+    void delAppFromList(IBinder token);
+    /*
+     * args: non
+     * return: app list
+     * desc: get apps in download list
+     */
+    List<String> getAppList();
+
 }

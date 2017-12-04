@@ -8,10 +8,14 @@ import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class DownloadManagerService extends Service {
     private static final String TAG = "DownloadManagerService";
 
     private RemoteCallbackList<IDownloadCallback> mCallbacks = new RemoteCallbackList<>();
+    private List<App> mApps = new ArrayList<>();
 
     private final IDownloadManagerService.Stub mDownloadManager = new IDownloadManagerService.Stub() {
         @Override
@@ -28,6 +32,45 @@ public class DownloadManagerService extends Service {
         @Override
         public void delDownloadListener(IDownloadCallback cb) throws RemoteException {
             mCallbacks.unregister(cb);
+        }
+
+        @Override
+        public void addAppToList(IBinder token, String name) throws RemoteException {
+            int idx = findApp(token);
+            if (idx >= 0) {
+                Log.d(TAG, "addAppToList: already added");
+                return;
+            }
+
+            App app = new App(token, name);
+            //注册客户端死掉的通知
+            token.linkToDeath(app, 0);
+
+            mApps.add(app);
+        }
+
+        @Override
+        public void delAppFromList(IBinder token) throws RemoteException {
+            int idx = findApp(token);
+            if (idx < 0) {
+                Log.d(TAG, "delAppFromList: already deteled");
+                return;
+            }
+
+            App app = mApps.get(idx);
+            mApps.remove(app);
+
+            //取消注册
+            app.mToken.unlinkToDeath(app, 0);
+        }
+
+        @Override
+        public List<String> getAppList() throws RemoteException {
+            ArrayList<String> names = new ArrayList<>();
+            for (App app : mApps) {
+                names.add(app.mName);
+            }
+            return names;
         }
     };
 
@@ -73,6 +116,38 @@ public class DownloadManagerService extends Service {
     public void onDestroy() {
         super.onDestroy();
         //Service销毁的时候，取消掉所有的回调
+
         mCallbacks.kill();
+    }
+
+    private final class App implements IBinder.DeathRecipient {
+        public final IBinder mToken;
+        public final String mName;
+
+        public App(IBinder token, String name) {
+            mToken = token;
+            mName = name;
+        }
+
+        @Override
+        public void binderDied() {
+            //客户端死掉，执行此回调
+            int index = mApps.indexOf(this);
+            if (index < 0) {
+                return;
+            }
+            Log.d(TAG, "binderDied: app died:  " + mName);
+            mApps.remove(this);
+        }
+    }
+
+    //通过IBinder查找app
+    private int findApp(IBinder token) {
+        for (int i = 0; i < mApps.size(); i++) {
+            if (mApps.get(i).mToken == token) {
+                return i;
+            }
+        }
+        return -1;
     }
 }
