@@ -4,4 +4,8 @@
     <string name="btn_bind">绑定服务</string>
     <string name="btn_unbind">解绑服务</string>
     <string name="btn_start_download">Start Download</string>
+    <string name="btn_add">添加app</string>
+    <string name="btn_delete">删除app</string>
+    <string name="btn_getlist">获取app列表</string>
+    <string name="btn_kill_activity">杀掉当前avtivity</string>
 </resources>

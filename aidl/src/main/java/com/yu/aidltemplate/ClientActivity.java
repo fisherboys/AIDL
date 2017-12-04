@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -14,6 +15,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import java.util.List;
+
 public class ClientActivity extends AppCompatActivity implements View.OnClickListener{
 
     private static final String TAG = "ClientActivity";
@@ -21,6 +24,12 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
     private Handler mHandler = new Handler();
 
     private IDownloadManagerService mDownloadManagerService = null;
+    private boolean mIsAdd = false;
+
+    private IBinder mToken = new Binder();
+
+    private Button btn_toggle;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +40,17 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
         findViewById(R.id.btn_bind).setOnClickListener(this);
         findViewById(R.id.btn_unbind).setOnClickListener(this);
         findViewById(R.id.btn_start_download).setOnClickListener(this);
+        findViewById(R.id.btn_getlist).setOnClickListener(this);
+        findViewById(R.id.btn_kill_activity).setOnClickListener(this);
+
+        btn_toggle = (Button) findViewById(R.id.btn_toggle);
+        btn_toggle.setOnClickListener(this);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unbindService(mServiceConnection);
     }
 
     @Override
@@ -47,6 +67,19 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
             case R.id.btn_start_download:
                 //开始下载
                 startDownload();
+                break;
+            case R.id.btn_toggle:
+                //添加或删除app
+                toggleAdd();
+                break;
+            case R.id.btn_getlist:
+                //列出下载列表中的app
+                listApp();
+                break;
+            case R.id.btn_kill_activity:
+                //finish();
+                break;
+            default:
                 break;
         }
     }
@@ -119,6 +152,8 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
         }
     };
 
+
+
     IDownloadCallback mCallback = new IDownloadCallback.Stub() {
         @Override
         public void onDownloaded() throws RemoteException {
@@ -144,4 +179,52 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
             attemptToBindService();
         }
     };
+
+    /*
+     * args: non
+     * return: true if ready
+     * desc: 判断服务是否就绪
+     */
+    private boolean isServiceReady() {
+        if (mDownloadManagerService != null) {
+            return true;
+        } else {
+            Toast.makeText(this, "Service is not available yet!", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+    }
+
+    //添加或删除app
+    private void toggleAdd() {
+        if (!isServiceReady()) {
+            return;
+        }
+        try {
+            if (!mIsAdd) {
+                String name = "App1";
+                mDownloadManagerService.addAppToList(mToken, name);
+                btn_toggle.setText(R.string.btn_delete);
+                mIsAdd = true;
+            } else {
+                mDownloadManagerService.delAppFromList(mToken);
+                btn_toggle.setText(R.string.btn_add);
+                mIsAdd = false;
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //
+    private void listApp() {
+        if (!isServiceReady()) {
+            return;
+        }
+        try {
+            List<String> mApps = mDownloadManagerService.getAppList();
+            Log.d(TAG, "listApp: " + mApps);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
 }
