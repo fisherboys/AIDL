@@ -4,6 +4,8 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/AIDLTemplate.iml" filepath="$PROJECT_DIR$/AIDLTemplate.iml" />
       <module fileurl="file://$PROJECT_DIR$/aidl/aidl.iml" filepath="$PROJECT_DIR$/aidl/aidl.iml" />
+      <module fileurl="file://$PROJECT_DIR$/service/service.iml" filepath="$PROJECT_DIR$/service/service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/servicelib/servicelib.iml" filepath="$PROJECT_DIR$/servicelib/servicelib.iml" />
     </modules>
   </component>
 </project>

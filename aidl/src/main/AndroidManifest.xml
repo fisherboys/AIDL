@@ -16,10 +16,6 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name=".DownloadManagerService"
-            android:enabled="true"
-            android:exported="true"></service>
     </application>
 
 </manifest>

@@ -15,6 +15,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.yu.servicelib.IDownloadCallback;
+import com.yu.servicelib.IDownloadManagerService;
+
 import java.util.List;
 
 public class ClientActivity extends AppCompatActivity implements View.OnClickListener{
@@ -25,6 +28,7 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
 
     private IDownloadManagerService mDownloadManagerService = null;
     private boolean mIsAdd = false;
+    private boolean mIsBound = false;
 
     private IBinder mToken = new Binder();
 
@@ -77,7 +81,7 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
                 listApp();
                 break;
             case R.id.btn_kill_activity:
-                //finish();
+                finish();
                 break;
             default:
                 break;
@@ -90,12 +94,17 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
      * desc: 绑定服务
      */
     private void attemptToBindService(){
-        if (mDownloadManagerService != null) {
-            Toast.makeText(this, "Download Service already binded, no need to bind again", Toast.LENGTH_SHORT).show();
+        if (mIsBound) {
+            //Toast.makeText(this, "Download Service already binded, no need to bind again", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "attemptToBindService!");
             return;
         }
-        Intent intent = new Intent(this, DownloadManagerService.class);
-        bindService(intent, mServiceConnection, BIND_AUTO_CREATE);
+        ComponentName com = new ComponentName("com.yu.service", "com.yu.service.DownloadManagerService");
+        //第一个参数是包名，第二个参数是类名，要带上包名
+        Intent intent = new Intent();
+        intent.setComponent(com);
+        bindService(intent, mServiceConnection, Context.BIND_AUTO_CREATE);
+        mIsBound = true;
     }
 
     /*
@@ -104,9 +113,10 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
      * desc: 解绑服务
      */
     private void attemptToUnbindService() {
-        if (mDownloadManagerService != null) {
+        if (mIsBound) {
             Toast.makeText(this, "Service unbind success", Toast.LENGTH_SHORT).show();
             unbindService(mServiceConnection);
+            mIsBound = false;
         } else {
             Toast.makeText(this, "Service already unbind, no need to unbind again", Toast.LENGTH_SHORT).show();
         }
@@ -118,7 +128,7 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
      * desc: 客户端调用服务端的函数开始下载
      */
     private void startDownload() {
-        if (mDownloadManagerService != null) {
+        if (mIsBound) {
             try {
                 boolean isStart = mDownloadManagerService.startDownload();//客户端调用服务端方法
                 Toast.makeText(this, "Does Start Download?  " + isStart, Toast.LENGTH_SHORT).show();
@@ -171,11 +181,13 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
     private IBinder.DeathRecipient mDeathRecipient = new IBinder.DeathRecipient() {
         @Override
         public void binderDied() {
-            if (mDownloadManagerService == null) {
+            if (!mIsBound) {
                 return;
             }
+            Log.d(TAG, "binderDied!");
             mDownloadManagerService.asBinder().unlinkToDeath(mDeathRecipient, 0);
             mDownloadManagerService = null;
+            mIsBound = false;
             attemptToBindService();
         }
     };
@@ -186,7 +198,7 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
      * desc: 判断服务是否就绪
      */
     private boolean isServiceReady() {
-        if (mDownloadManagerService != null) {
+        if (mIsBound) {
             return true;
         } else {
             Toast.makeText(this, "Service is not available yet!", Toast.LENGTH_SHORT).show();
@@ -196,17 +208,17 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
 
     //添加或删除app
     private void toggleAdd() {
+        String name = "App1";
         if (!isServiceReady()) {
             return;
         }
         try {
             if (!mIsAdd) {
-                String name = "App1";
-                mDownloadManagerService.addAppToList(mToken, name);
+                mDownloadManagerService.addAppToList(name);
                 btn_toggle.setText(R.string.btn_delete);
                 mIsAdd = true;
             } else {
-                mDownloadManagerService.delAppFromList(mToken);
+                mDownloadManagerService.delAppFromList(name);
                 btn_toggle.setText(R.string.btn_add);
                 mIsAdd = false;
             }

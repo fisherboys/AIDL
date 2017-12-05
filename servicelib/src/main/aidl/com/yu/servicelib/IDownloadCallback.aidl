@@ -1,13 +1,12 @@
 // IDownloadCallback.aidl
 package com.yu.servicelib;
 
-// Declare any non-default types here with import statements
 
 interface IDownloadCallback {
-    /**
-     * Demonstrates some basic types that you can use as parameters
-     * and return values in AIDL.
+    /*
+     * args: non
+     * return: non
+     * desc: 下载完成回调
      */
-    void basicTypes(int anInt, long aLong, boolean aBoolean, float aFloat,
-            double aDouble, String aString);
+    void onDownloaded();
 }

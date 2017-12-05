@@ -1,1 +1,1 @@
-include ':aidl'
+include ':aidl', ':servicelib', ':service'
